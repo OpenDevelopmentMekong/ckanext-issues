@@ -47,10 +47,17 @@ def _issue_auth_status_change(context,data_dict):
     issue_id = _guess_issue_id(data_dict)
 
     if is_dataset_creator(context,data_dict):
-        return {'success': False,
-                'msg': p.toolkit._('Dataset owner is not allowed to change status of issue {0}'
-                        .format(issue_id))
-                }
+        return {
+          'success': False,
+          'msg': p.toolkit._('Dataset owner is not allowed to change status of issue {0}'.format(issue_id))
+        }
+
+    result = issue_auth_organization(context, data_dict, 'organization_update')
+    if not result['success']:
+        return {
+          'success': False,
+          'msg': p.toolkit._('Non admin users are not allowed to change status of issue {0}'.format(issue_id))
+        }
 
     return _issue_auth_read_and_create(context,data_dict)
 

@@ -100,9 +100,7 @@ def issues_enabled(dataset):
                 if extra.get('key') == 'issues_enabled':
                     return toolkit.asbool(extra.get('value'))
         else:
-            return toolkit.asbool(
-                config.get('ckanext.issues.enabled_per_dataset_default', True)
-            )
+            return toolkit.asbool(config.get('ckanext.issues.enabled_per_dataset_default', True))
 
 
 def issues_list(dataset_ref, status=issuemodel.ISSUE_STATUS.open):
