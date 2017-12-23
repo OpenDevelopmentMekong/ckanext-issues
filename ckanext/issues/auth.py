@@ -52,7 +52,7 @@ def _issue_auth_status_change(context,data_dict):
           'msg': p.toolkit._('Dataset owner is not allowed to change status of issue {0}'.format(issue_id))
         }
 
-    result = issue_auth_organization(context, data_dict, 'organization_update'):
+    result = issue_auth_organization(context, data_dict, 'organization_update')
     if not result.success:
         return {
           'success': False,
