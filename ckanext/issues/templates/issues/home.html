@@ -20,8 +20,8 @@
       </h1>
     </div>
     <div>
-      {% snippet 'snippets/search_form.html', query=q, fields=(('page', pagination.page), ('per_page', pagination.per_page), ('status', status), ('spam_state', spam_state)), sorting=filters, sorting_selected=sort, placeholder=_('Search issues...'), no_bottom_border=true, no_title=true %}
-      <h2>
+      {% snippet 'snippets/search_form.html', query=q, type='issue', fields=(('page', pagination.page), ('per_page', pagination.per_page), ('status', status), ('spam_state', spam_state)), sorting=filters, sorting_selected=sort, placeholder=_('Search issues...'), no_bottom_border=true, no_title=True %}
+    <h2>
         {{ ungettext('{number} issue found', '{number} issues found', pagination.total_count) .format(number=pagination.total_count) }}
       </h2>
     </div>
@@ -83,7 +83,7 @@
     {% endif %}
     </ul>
   </div>
-  <div class="pagination pagination-small span3" id="per_page">
+  <div class="pagination pagination-small span5" id="per_page">
     <ul>
       {% for per_page_option in issues_per_page %}
         <li{% if per_page_option==pagination.per_page %} class="active"{% endif %}>
@@ -102,7 +102,7 @@
 {% block secondary_content %}
 <div class="module module-narrow module-shallow">
   <h2 class="module-heading">
-    <i class="icon-medium icon-filter"></i>
+    <i class="fa fa-filter"></i>
     Status
   </h2>
   <ul class="unstyled nav nav-simple">
@@ -117,7 +117,7 @@
   </ul>
   {% if h.check_access('package_update', {'id': pkg.id }) %}
   <h2 class="module-heading">
-    <i class="icon-medium icon-filter"></i>
+    <i class="fa fa-filter"></i>
     Spam State
   </h2>
   <ul class="unstyled nav nav-simple nav-facet">
