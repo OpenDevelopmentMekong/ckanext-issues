@@ -14,6 +14,20 @@ log = getLogger(__name__)
 
 role_mapper ={'Admin':'admin','Editor':'reader', 'DataEntryStaff': 'editor'}
 
+issuer_email_text_close_delete = """
+{} ({}) has {} an issue that you have raised on  data.opendevelopmentmekong.net:
+
+Dataset title: '{{title}}'
+Issue title: "{{issue.title}}"
+Issue description: "{{issue.description}}"
+
+Please visit {} to see the closing comment.
+
+Thank you
+
+The data.opendevelopmentmekong.net team
+"""
+
 def notify_create_reopen(context,issue):
 
   notify(context,issue,"issues/email/issue_create_reopen.txt", issue_action='create')
@@ -72,8 +86,9 @@ def notify(context,issue,email_template, issue_action=None):
     issuer = model.User.get(issue.user_id)
     issuer_name = issuer.name
     issuer_email = issuer.email
-    email_msg = render(email_template,extra_vars=extra_vars)
-    send_email(contact_name,contact_email,email_msg
+    #email_msg = render(email_template,extra_vars=extra_vars)
+    email_msg = issuer_email_text_close_delete.format(str(user_obj.name), str(user_obj.email), issue_action, extra_vars.get('site_url')) 
+    send_email(contact_name,contact_email,email_msg)
     # Need to send an email on issue close
 
   if notify_owner:
