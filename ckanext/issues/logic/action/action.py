@@ -17,7 +17,7 @@ _get_or_bust = logic.get_or_bust
 
 log = logging.getLogger(__name__)
 
-
+@p.toolkit.side_effect_free
 def issue_show(context, data_dict=None):
     '''Return a single issue.
 
@@ -114,7 +114,7 @@ def issue_update(context, data_dict):
     for k, v in data_dict.items():
         if k not in ignored_keys:
             setattr(issue, k, v)
-
+ 
     if status_change:
         if data_dict['status'] == issuemodel.ISSUE_STATUS.closed:
             issue.resolved = datetime.now()
@@ -126,9 +126,6 @@ def issue_update(context, data_dict):
         elif data_dict['status'] == issuemodel.ISSUE_STATUS.open:
             issue.resolved = None
 
-        session.add(issue)
-        session.commit()
-
         if data_dict['status'] == issuemodel.ISSUE_STATUS.closed:
             review_system.issue_deleted_from_dataset(data_dict={'dataset_id':issue.dataset_id})
             notification.notify_close(context,issue)
@@ -136,6 +133,10 @@ def issue_update(context, data_dict):
         elif data_dict['status'] == issuemodel.ISSUE_STATUS.open:
             review_system.issue_created_in_dataset(data_dict={'dataset_id':issue.dataset_id})
             notification.notify_create_reopen(context,issue)
+
+    session.add(issue)
+    session.commit()
+
 
     return issue.as_dict()
 
@@ -301,8 +302,7 @@ def organization_users_autocomplete(context, data_dict):
 
     users = []
     for user in query.all():
-        user_dict = dict(user.__dict__)
-        user_dict.pop('_labels', None)
+        user_dict = {'id': user.id, 'name': user.name, 'fullname': user.fullname}
         users.append(user_dict)
     return users
 
