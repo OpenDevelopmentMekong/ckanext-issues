@@ -126,17 +126,16 @@ def issue_update(context, data_dict):
         elif data_dict['status'] == issuemodel.ISSUE_STATUS.open:
             issue.resolved = None
 
-        if data_dict['status'] == issuemodel.ISSUE_STATUS.closed:
-            review_system.issue_deleted_from_dataset(data_dict={'dataset_id':issue.dataset_id})
-            notification.notify_close(context,issue)
-
-        elif data_dict['status'] == issuemodel.ISSUE_STATUS.open:
-            review_system.issue_created_in_dataset(data_dict={'dataset_id':issue.dataset_id})
-            notification.notify_create_reopen(context,issue)
-
     session.add(issue)
     session.commit()
-
+    
+    # This for review system
+    if status_change and data_dict['status'] == issuemodel.ISSUE_STATUS.closed:
+        review_system.issue_deleted_from_dataset(data_dict={'dataset_id':issue.dataset_id})
+        notification.notify_close(context,issue)
+    elif status_change and data_dict['status'] == issuemodel.ISSUE_STATUS.open:
+        review_system.issue_created_in_dataset(data_dict={'dataset_id':issue.dataset_id})
+        notification.notify_create_reopen(context,issue)
 
     return issue.as_dict()
 
