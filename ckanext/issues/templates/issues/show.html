@@ -174,7 +174,8 @@
               {% if can_change_status %}
                 {% if issue.status == 'open' %}
                 <button class="btn" type="submit" name="close" tabindex="3">
-                  {{ _('Close') }}
+                  <i class="fa fa-times-circle" aria-hidden="true" style="color:#d9534f"></i>
+                  {{ _('Comment and close issue') }}
                 </button>
                 {% else %}
                 <button class="btn" type="submit" name="reopen" tabindex="3">
