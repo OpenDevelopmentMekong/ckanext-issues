@@ -1,16 +1,13 @@
 import logging
 from datetime import datetime
-
 import ckan.logic as logic
 import ckan.plugins as p
 import ckan.model as model
 from ckan.logic import validate
 import ckanext.issues.model as issuemodel
 from ckanext.issues.logic import schema
-
-from pylons import config
-
-from ckanext.issues.controller import review_system, notification
+from ckan.common import config
+from ckanext.issues.utils import review_system, notification
 
 NotFound = logic.NotFound
 _get_or_bust = logic.get_or_bust

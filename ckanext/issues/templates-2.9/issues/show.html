@@ -1,0 +1,241 @@
+{% extends "issues/base.html" %}
+
+{% block styles %}
+  {{ super() }}
+  {% asset 'issues/issues_js' %}
+{% endblock %}
+
+{% block subtitle %}{{ '%s #%s - %s' % (issue.title, issue.id, _('Issues')) }} {% endblock %}
+
+{% block breadcrumb_item %}{{ h.nav_link(issue.id, named_route='issues_show', package_id=dataset.name, id=issue.id) }}
+{% endblock %}
+
+{% set can_edit_issue = h.check_access('issue_update', {'dataset_id': dataset.id, 'id': issue.id }) %}
+{% set can_change_status = h.check_access('issue_status_change', {'dataset_id': dataset.id, 'id': issue.id }) %}
+{% set is_publisher = h.check_access('package_update', {'id': dataset.id }) %}
+{% import 'macros/form.html' as form %}
+
+{%- macro issue_description(comment) %}
+<div class="issue-comment-wrapper">
+  <a href="{{comment.user.ckan_url}}"
+    class="issue-comment-avatar">
+    {{comment.user.gravatar}}
+  </a>
+  <div class="issue-comment">
+    <div class="issue-comment-header">
+      <div class="issue-comment-actions">
+        {% if can_edit_issue %}
+          <div class="issue-comment-action" id="issue-edit-button">
+            <a href={{h.url_for('issues_edit', package_id=dataset.name, id=issue.id)}} class="subtle-btn" title="Edit">
+              <i class="icon-pencil"></i>
+            </a>
+          </div>
+        {% endif %}
+        {% if c.user and comment.spam_state =='visible' %}
+          <div id="issue-report-abuse-button" class="issue-comment-action">
+            <form id="issue-report-abuse-form" method="post" action="{{h.url_for('issues_report_abuse', dataset_id=dataset.name, issue_id=issue.id)}}">
+              <button class="subtle-btn subtle-btn-abuse" type="submit" title="Report Abuse">
+                <i class="icon-flag"></i>
+              </button>
+            </form>
+          </div>
+        {% elif can_edit_issue %}
+          <div id="issue-not-spam-button" class="issue-comment-action">
+            <form id="issue-not-spam-button" method="post" action="{{h.url_for('issues_reset_spam_state', dataset_id=dataset.name, issue_id=issue.id)}}">
+              <button class="subtle-btn-active subtle-btn-abuse-active" type="submit" data-toggle="tooltip" title="Cancel abuse notification">
+                <i class="icon-flag"></i>
+                {{ _('Abuse - admin notified') }}
+              </button>
+            </form>
+          </div>
+        {% endif %}
+      </div>
+      {% if can_edit_issue %}
+        <div class="issue-comment-label">
+           Owner
+        </div>
+      {% endif %}
+      <div class="issue-header-text">
+        <a href="{{comment.user.ckan_url}}" class="author">{{ comment.user.name}}</a>
+        commented
+        <span title="{{comment.created}}">{{ h.time_ago_from_timestamp(comment.created) }}</span>
+      </div>
+    </div>
+    <div class="issue-comment-content{% if comment.spam_state == 'hidden' %} issue-spam{% endif %}">
+      {{ h.render_markdown(comment.comment) }}
+    </div>
+  </div>
+</div>
+{% endmacro %}
+
+
+{%- macro issue_comment(comment) %}
+<div class="issue-comment-wrapper">
+  <a href="{{comment.user.ckan_url}}"
+    class="issue-comment-avatar">
+    {{comment.user.gravatar}}
+  </a>
+  <div class="issue-comment">
+    <div class="issue-comment-header">
+      <div class="issue-comment-actions">
+        {% if c.user and comment.spam_state =='visible' %}
+          <div id="issue-report-abuse-button" class="issue-comment-action">
+            <form class="issue-comment-report-abuse-form" method="post" action="{{h.url_for('issues_comment_report_abuse', dataset_id=dataset.name, issue_id=issue.id, comment_id=comment.id)}}">
+              <button class="btn btn-small" type="submit" "title"="Report Abuse">
+                <i class="icon-flag"></i>
+                {{ _('Report Abuse') }}
+              </button>
+            </form>
+          </div>
+        {% elif can_edit_issue %}
+          <div id="issue-not-spam-button" class="issue-comment-action">
+            <form id="issue-not-spam-button" method="post" action="{{h.url_for('issues_comment_reset_spam_state', dataset_id=dataset.name, issue_id=issue.id, comment_id=comment.id)}}">
+              <button class="btn btn-small" type="submit" "title"="Not abuse">
+                <i class="icon-flag"></i>
+                {{ _('Not abuse') }}
+              </button>
+            </form>
+          </div>
+        {% endif %}
+      </div>
+      {% if can_edit_issue %}
+        <div class="issue-comment-label">
+           Owner
+        </div>
+      {% endif %}
+      {% if comment.spam_state == 'hidden' %}
+        <div class="issue-comment-label">
+           Marked as abuse
+        </div>
+      {% endif %}
+      <div class="issue-header-text">
+        <a href="{{comment.user.ckan_url}}" class="author">{{ comment.user.name}}</a>
+        commented
+        <span title="{{comment.created}}">{{ h.time_ago_from_timestamp(comment.created) }}</span>
+      </div>
+    </div>
+    <div class="issue-comment-content{% if comment.spam_state == 'hidden' %} issue-spam{% endif %}">
+      {{ h.render_markdown(comment.comment) }}
+    </div>
+  </div>
+</div>
+{% endmacro %}
+
+{% block primary_content %}
+  <section class="module issue-show">
+    <div class="module-content">
+      <div class="issue-header">
+        <h1 class="page-heading">
+          {{issue.title}}
+          <span class="header-number">#{{issue.id}}</small>
+        </h1>
+        <div class="issue-header-meta">
+          <span class="issue-header-status {{issue.status}}">
+            <i class="icon-exclamation-sign"></i> {{issue.status.title()}}
+          </span>
+          <a href="{{issue.user.ckan_url}}">{{issue.user.name}}</a> opened this issue {{issue.time_ago}} &middot;
+          {{ ungettext('{number} comment', '{number} comments', comment_count).format(number=comment_count) }}
+        </div>
+      </div>
+
+      {{ issue_description(issue) }}
+
+      {% for comment in issue.comments %}
+        {% if comment.spam_state == 'visible' or can_edit_issue %}
+          {{ issue_comment(comment) }}
+        {% endif %}
+      {% endfor %}
+
+      <div class="issue-comment-new">
+        <div class="issue-comment-wrapper">
+          {% if c.user %}
+          <a href="#"
+            class="issue-comment-avatar">
+            {{h.user_image(c.user.id, size=170)}}
+          </a>
+          <form id="issue-comment-form" class="dataset-form" method="post"
+            data-module="basic-form"
+            action="{{h.url_for('issues_comments', id=issue.id, package_id=dataset.id)}}">
+            <div class="control-group control-full">
+              <div class="controls editor">
+                <textarea id="comment" name="comment" cols="20" rows="5"
+                  placeholder="Leave a comment"
+                  tabindex="1"></textarea>
+                <span class="editor-info-block">
+                  You can use <a href="http://daringfireball.net/projects/markdown/syntax" target="_blank">Markdown formatting</a> here</span>
+              </div>
+            </div>
+            {% block form_actions %}
+            <div class="form-actions" style="border-top: none;">
+              {% if h.check_access('issue_delete', {'issue_id': issue.id, 'dataset_id': dataset.id}) %}
+                {% set locale = h.dump_json({'content': _('Are you sure you want to delete this issue?')}) %}
+                <a class="btn btn-danger pull-left" href="{% url_for 'issues_delete', dataset_id=dataset.id, issue_id=issue.id %}" data-module="confirm-action" data-module-i18n="{{ locale }}">{% block delete_button_text %}{{ _('Delete') }}{% endblock %}</a>
+              {% endif %}
+              {% if can_change_status %}
+                {% if issue.status == 'open' %}
+                <button class="btn" type="submit" name="close" tabindex="3">
+                  <i class="fa fa-times-circle" aria-hidden="true" style="color:#d9534f"></i>
+                  {{ _('Comment and close issue') }}
+                </button>
+                {% else %}
+                <button class="btn" type="submit" name="reopen" tabindex="3">
+                  {{ _('Re-open') }}
+                </button>
+                {% endif %}
+              {% endif %}
+              <button class="btn btn-success" type="submit" name="save"
+                tabindex="2">
+                {{ _('Comment') }}
+              </button>
+            </div>
+            {% endblock %}
+          </form>
+          {% else %}
+          <div class="not-logged-in">
+            <a href="{{h.url_for('login', came_from=h.full_current_url())}}" class="btn">{{ _('Login to comment') }}</a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+  </section>
+{% endblock %}
+
+{% block secondary_content %}
+<div class="module module-narrow module-shallow">
+  <h2 class="module-heading">
+    <i class="icon-medium icon-user"></i>
+    Assignee
+  </h2>
+  <div id='ckanext-issues-assignee'>
+    {% if issue.assignee %}
+      {{ h.gravatar((issue.assignee.email_hash), size=22) }}
+      {{ issue.assignee.name }}
+    {% else %}
+      {{ _('No one') }}
+    {% endif %}
+  </div>
+  {% block assignee_form %}
+    {% if is_publisher %}
+    <h2 class="module-heading">
+      <i class="icon-medium icon-edit"></i>
+      Change Assignee
+    </h2>
+    <form id='ckanext-issues-assign' class="dataset-form form-horizontal add-member-form" method='post' action="{{ h.url_for('issues_assign', issue_id=issue.id, dataset_id=dataset.id) }}">
+        <div class="controls">
+          <input id="assignee" type="text" name="assignee" placeholder="Username"
+          value="" class="control-medium" data-module="autocomplete-action-api"
+          {% if dataset['owner_org'] %}
+          data-module-source="/api/3/action/organization_users_autocomplete?organization_id={{ dataset['owner_org']}}&q=?">
+          {% else %}
+          data-module-source="/api/3/action/user_autocomplete?q=?">
+          {% endif %}
+        </div>
+        <div>
+          <button class="btn btn-success btn-mini" type="submit" name="assign">
+            {{ _('Assign') }}
+          </button>
+        </div>
+      </form>
+     {% endif %}
+  {% endblock %}
+{% endblock %}

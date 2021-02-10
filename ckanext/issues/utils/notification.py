@@ -1,6 +1,5 @@
 import traceback
-import pylons
-from pylons import config
+from ckan.plugins.toolkit import config
 from logging import getLogger
 import ckan.model as model
 import ckan.lib.helpers as h

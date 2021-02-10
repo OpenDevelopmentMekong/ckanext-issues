@@ -3,7 +3,7 @@ from ckan import logic
 from ckan.logic import action
 import ckan.plugins as p
 import ckanext.issues.model as issuemodel
-from pylons import config
+from ckan.plugins.toolkit import config
 import logging
 
 log = logging.getLogger(__name__)

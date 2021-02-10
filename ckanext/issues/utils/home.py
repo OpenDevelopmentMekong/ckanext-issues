@@ -12,7 +12,7 @@ def home(dataset_id, get_query_dict):
         schema.issue_home_controller_schema()
     )
     if errors:
-        raise toolkit.ValidationError(errors).error_summary
+        raise toolkit.ValidationError(errors)
     query.pop('__extras', None)
 
     return _search_issues(dataset_id, **query)
@@ -46,4 +46,5 @@ def _search_issues(dataset_id, status=issuemodel.ISSUE_STATUS.open,
     }
     if spam_state:
         template_variables['spam_state'] = spam_state
+
     return template_variables

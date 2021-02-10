@@ -2,8 +2,8 @@ import collections
 from logging import getLogger
 import re
 from sqlalchemy import func
-from pylons.i18n import _
-from pylons import request, config, tmpl_context as c
+from ckan.plugins.toolkit import _
+from ckan.plugins.toolkit import request, config, c
 from ckan.lib.base import render, abort
 import ckan.lib.helpers as h
 import ckan.model as model
@@ -14,6 +14,7 @@ from ckan.plugins import toolkit
 import ckanext.issues.model as issuemodel
 from ckanext.issues.utils import home, show
 from ckanext.issues.lib import helpers as issues_helpers
+from ckanext.issues import helpers as issues_h
 
 log = getLogger(__name__)
 
@@ -76,14 +77,15 @@ def new(package_id, resource_id=None):
     c.errors, c.error_summary = {}, {}
 
     if request.method == 'POST':
+        post_params = issues_h.get_request_parameter_flask_pylons_mixin(request, method="post")
         # TODO: ? use dictization etc
         #    data = logic.clean_dict(
         #        df.unflatten(
         #            logic.tuplize_dict(
         #                logic.parse_params(request.params))))
         data_dict.update({
-            'title': request.POST.get('title'),
-            'description': request.POST.get('description')
+            'title': post_params.get('title'),
+            'description': post_params.get('description')
             })
 
         if not data_dict['title']:
@@ -98,6 +100,12 @@ def new(package_id, resource_id=None):
             h.flash_success(_('Your issue has been registered, '
                               'thank you for the feedback'))
 
+            if p.toolkit.check_ckan_version(min_version='2.9.0'):
+                return p.toolkit.redirect_to(h.url_for(
+                        'issues.show_view',
+                        package_id=c.pkg['name'],
+                        id=issue_dict['id']
+                    ))
             p.toolkit.redirect_to(h.url_for(
                 'issues_show',
                 package_id=c.pkg['name'],
@@ -143,6 +151,9 @@ def edit(id, package_id, resource_id=None):
 
         try:
             p.toolkit.get_action('issue_update')(data_dict=data_dict)
+            if p.toolkit.check_ckan_version(min_version='2.9.0'):
+                return p.toolkit.redirect_to('issues.show_view', id=id,
+                                             package_id=package_id)
             return p.toolkit.redirect_to('issues_show', id=id,
                                          package_id=package_id)
         except p.toolkit.ValidationError, e:
@@ -180,22 +191,30 @@ def comments(id, package_id):
     except logic.NotAuthorized:
         abort(401, _('Not authorized'))
 
-    next_url = h.url_for(
-        'issues_show',
-        package_id=c.pkg['name'],
-        id=id
+    if p.toolkit.check_ckan_version(min_version='2.9.0'):
+        next_url = h.url_for(
+            'issues.show_view',
+            package_id=c.pkg['name'],
+            id=id
         )
+    else:
+        next_url = h.url_for(
+            'issues_show',
+            package_id=c.pkg['name'],
+            id=id
+            )
+
+    post_params = issues_h.get_request_parameter_flask_pylons_mixin(request, method="post")
     # TODO: (?) move validation somewhere better than controller
-    comment = request.POST.get('comment')
+    comment = post_params.get('comment')
     if not comment or comment.strip() == '':
         h.flash_error(_('Comment cannot be empty'))
-        p.toolkit.redirect_to(next_url)
-        return
+        return p.toolkit.redirect_to(next_url)
 
     # do this first because will error here if not allowed and do not want
     # comment created in that case
-    if 'close' in request.POST or 'reopen' in request.POST:
-        status = (issuemodel.ISSUE_STATUS.closed if 'close' in request.POST
+    if 'close' in post_params or 'reopen' in post_params:
+        status = (issuemodel.ISSUE_STATUS.closed if 'close' in post_params
                   else issuemodel.ISSUE_STATUS.open)
         issue_dict = {
             'id': id,
@@ -203,7 +222,7 @@ def comments(id, package_id):
             'status': status
             }
         logic.get_action('issue_update')(context, issue_dict)
-        if 'close' in request.POST:
+        if 'close' in post_params:
             h.flash_success(_("Issue closed"))
         else:
             h.flash_success(_("Issue re-opened"))
@@ -215,7 +234,10 @@ def comments(id, package_id):
         }
     logic.get_action('issue_comment_create')(context, data_dict)
 
-    p.toolkit.redirect_to(next_url)
+    if p.toolkit.check_ckan_version(min_version='2.9.0'):
+        return p.toolkit.redirect_to(next_url)
+    else:
+        p.toolkit.redirect_to(next_url)
 
 
 def home_view(package_id):
@@ -225,8 +247,11 @@ def home_view(package_id):
     """
     _before(package_id)
     extra_vars = dict()
+
+    params = issues_h.get_request_parameter_flask_pylons_mixin(request)
+
     try:
-        extra_vars = home.home(package_id, request.GET)
+        extra_vars = home.home(package_id, params)
     except toolkit.ValidationError, e:
         _home_handle_error(package_id, e)
     return render("issues/home.html", extra_vars=extra_vars)
@@ -235,6 +260,8 @@ def home_view(package_id):
 def delete(dataset_id, issue_id):
     dataset = _before(dataset_id)
     if 'cancel' in request.params:
+        if p.toolkit.check_ckan_version(min_version='2.9.0'):
+            return p.toolkit.redirect_to('issues.show_view', package_id=dataset_id, id=issue_id)
         p.toolkit.redirect_to('issues_show', package_id=dataset_id, id=issue_id)
 
     if request.method == 'POST':
@@ -247,6 +274,9 @@ def delete(dataset_id, issue_id):
 
         h.flash_notice(_('Issue {0} has been deleted.'.format(issue_id)))
 
+        if p.toolkit.check_ckan_version(min_version='2.9.0'):
+            return p.toolkit.redirect_to('issues.home_view', package_id=dataset_id)
+
         p.toolkit.redirect_to('issues_home', package_id=dataset_id)
     else:
         return render('issues/confirm_delete.html',
@@ -257,14 +287,19 @@ def delete(dataset_id, issue_id):
 
 
 def assign(dataset_id, issue_id):
-    _ = _before(dataset_id)
+    _dummy = _before(dataset_id)
     if request.method == 'POST':
-        assignee_id = request.POST.get('assignee', '')
+        post_params = issues_h.get_request_parameter_flask_pylons_mixin(request, method="post")
+        assignee_id = post_params.get('assignee', '')
         try:
             assignee = toolkit.get_action('user_show')(
                 data_dict={'id': assignee_id})
         except toolkit.ObjectNotFound:
             h.flash_error(_('User {0} does not exist'.format(assignee_id)))
+            if p.toolkit.check_ckan_version(min_version='2.9.0'):
+                return p.toolkit.redirect_to('issues.show_view',
+                                             id=issue_id,
+                                             package_id=dataset_id)
             return p.toolkit.redirect_to('issues_show',
                                          id=issue_id,
                                          package_id=dataset_id)
@@ -280,13 +315,17 @@ def assign(dataset_id, issue_id):
         except toolkit.ValidationError, e:
             toolkit.abort(404)
 
+    if p.toolkit.check_ckan_version(min_version='2.9.0'):
+        return p.toolkit.redirect_to('issues.show_view',
+                                     id=issue_id,
+                                     package_id=dataset_id)
     return p.toolkit.redirect_to('issues_show',
                                  id=issue_id,
                                  package_id=dataset_id)
 
 
 def report_abuse(dataset_id, issue_id):
-    _ = _before(dataset_id)
+    _dummy = _before(dataset_id)
     if request.method == 'POST':
         if not c.user:
             msg = _('You must be logged in to flag issues as spam'.format(
@@ -297,14 +336,15 @@ def report_abuse(dataset_id, issue_id):
                 data_dict={'issue_id': issue_id, 'dataset_id': dataset_id}
             )
             h.flash_success(_('Issue reported as spam'))
-            p.toolkit.redirect_to('issues_show', package_id=dataset_id,
-                          id=issue_id)
+            if p.toolkit.check_ckan_version(min_version='2.9.0'):
+                return p.toolkit.redirect_to('issues.show_view', package_id=dataset_id, id=issue_id)
+            p.toolkit.redirect_to('issues_show', package_id=dataset_id, id=issue_id)
         except toolkit.ValidationError, e:
             toolkit.abort(404)
 
 
 def report_comment_abuse(dataset_id, issue_id, comment_id):
-    _ = _before(dataset_id)
+    _dummy = _before(dataset_id)
     if request.method == 'POST':
         if not c.user:
             msg = _('You must be logged in to flag comments as spam'.format(
@@ -316,22 +356,24 @@ def report_comment_abuse(dataset_id, issue_id, comment_id):
                            'dataset_id': dataset_id}
             )
             h.flash_success(_('Comment reported as spam'))
-            p.toolkit.redirect_to('issues_show', package_id=dataset_id,
-                          id=issue_id)
+            if p.toolkit.check_ckan_version(min_version='2.9.0'):
+                return p.toolkit.redirect_to('issues.show_view', package_id=dataset_id, id=issue_id)
+            p.toolkit.redirect_to('issues_show', package_id=dataset_id, id=issue_id)
         except toolkit.ValidationError, e:
             toolkit.abort(404)
 
 
 def reset_spam_state(dataset_id, issue_id):
-    _ = _before(dataset_id)
+    _dummy = _before(dataset_id)
     if request.method == 'POST':
         try:
             toolkit.get_action('issue_reset_spam_state')(
                 data_dict={'issue_id': issue_id, 'dataset_id': dataset_id}
             )
             h.flash_success(_('Issue unflagged as spam'))
-            p.toolkit.redirect_to('issues_show', package_id=dataset_id,
-                          id=issue_id)
+            if p.toolkit.check_ckan_version(min_version='2.9.0'):
+                return p.toolkit.redirect_to('issues.show_view', package_id=dataset_id, id=issue_id)
+            p.toolkit.redirect_to('issues_show', package_id=dataset_id, id=issue_id)
         except toolkit.NotAuthorized:
             msg = _('You must be logged in to reset spam counters'.format(
                 issue_id))
@@ -341,7 +383,7 @@ def reset_spam_state(dataset_id, issue_id):
 
 
 def reset_comment_spam_state(dataset_id, issue_id, comment_id):
-    _ = _before(dataset_id)
+    _dummy = _before(dataset_id)
     if request.method == 'POST':
         try:
             toolkit.get_action('issue_comment_reset_spam_state')(
@@ -349,8 +391,11 @@ def reset_comment_spam_state(dataset_id, issue_id, comment_id):
                            'dataset_id': dataset_id}
             )
             h.flash_success(_('Comment unflagged as spam'))
-            p.toolkit.redirect_to('issues_show', package_id=dataset_id,
-                          id=issue_id)
+            if p.toolkit.check_ckan_version(min_version='2.9.0'):
+                return p.toolkit.redirect_to('issues.show_view', package_id=dataset_id, id=issue_id)
+            else:
+                p.toolkit.redirect_to('issues_show', package_id=dataset_id, id=issue_id)
+
         except toolkit.NotAuthorized:
             msg = _('You must be logged in to reset spam counters'.format(
                 issue_id))
@@ -425,4 +470,6 @@ def all_issues_page():
 def _home_handle_error(package_id, exc):
     msg = toolkit._("Validation error: {0}".format(exc.error_summary))
     h.flash(msg, category='alert-error')
+    if p.toolkit.check_ckan_version(min_version='2.9.0'):
+        return p.toolkit.redirect_to('issues.home_view', package_id=package_id)
     return p.toolkit.redirect_to('issues_home', package_id=package_id)

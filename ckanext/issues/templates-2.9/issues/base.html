@@ -1,0 +1,14 @@
+{% extends "page.html" %}
+
+{% block styles %}
+  {{ super() }}
+  {% asset 'issues/issues_css' %}
+{% endblock %}
+
+{% block breadcrumb_content %}
+  <li>{{ h.nav_link(_(c.pkg.type.title()), named_route=c.pkg.type ~ '.search') }}</li>
+  <li><a href="{{ h.url_for(c.pkg.type ~ '.read', id=c.pkg.name) }}" title="{{ c.pkg.title }}">{{ h.truncate(c.pkg.title, 60) }}</a></li>
+  <li><a href="{{ h.url_for('issues.home_view', package_id=c.pkg.name) }}">Issues</a></li>
+  <li class="active">{% block breadcrumb_item %}{% endblock %}</li>
+{% endblock %}
+

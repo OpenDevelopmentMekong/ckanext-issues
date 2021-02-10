@@ -9,5 +9,11 @@ class IssuesMixinPlugin(plugins.SingletonPlugin):
     '''ODM issue extension'''
     plugins.implements(plugins.IBlueprint)
 
+    # IConfigurer
+    def update_config(self, config):
+        toolkit.add_template_directory(config, '../templates-2.9')
+        toolkit.add_public_directory(config, '../public')
+        toolkit.add_resource('../public', 'issues')
+        
     def get_blueprint(self):
         return [issues_blueprint]

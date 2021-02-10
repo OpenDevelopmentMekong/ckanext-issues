@@ -1,6 +1,6 @@
 from math import ceil
 
-from pylons import config
+from ckan.plugins.toolkit import config
 
 from ckan.plugins import toolkit
 from ckan.lib import helpers

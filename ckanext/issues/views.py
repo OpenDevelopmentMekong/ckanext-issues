@@ -26,8 +26,11 @@ issues_blueprint.add_url_rule("/dataset/<dataset_id>/issues/<issue_id>/comment/<
                               methods=["POST"], view_func=view_functions.report_comment_abuse)
 issues_blueprint.add_url_rule("/dataset/<dataset_id>/issues/<issue_id>/comment/<comment_id>/reset_spam_state",
                               methods=["POST"], view_func=view_functions.reset_spam_state)
-issues_blueprint.add_url_rule("/dataset/<package_id>/issues/new/<resource_id>",
-                              methods=["POST"], view_func=view_functions.add)
+
+# This is add method not available. Not sure why it is add in before_rout. So coomenting
+#issues_blueprint.add_url_rule("/dataset/<package_id>/issues/new/<resource_id>",
+                              #methods=["POST"], view_func=view_functions.add)
+                              
 issues_blueprint.add_url_rule("/dataset/<package_id>/issues/<id>", methods=["GET"],
                               view_func=view_functions.show_view)
 issues_blueprint.add_url_rule("/publisher/issues/<publisher_id>", methods=["GET"],

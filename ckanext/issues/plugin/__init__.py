@@ -11,12 +11,11 @@ import ckanext.issues.auth as auth
 
 log = getLogger(__name__)
 
-try:
-    toolkit.requires_ckan_version("2.9")
-except CkanVersionException:
-    from ckanext.issues.plugin.pylons_plugin import IssuesMixinPlugin
-else:
+
+if toolkit.check_ckan_version(min_version='2.9.0'):
     from ckanext.issues.plugin.flask_plugin import IssuesMixinPlugin
+else:
+    from ckanext.issues.plugin.pylons_plugin import IssuesMixinPlugin
 
 
 class IssuesPlugin(IssuesMixinPlugin):
@@ -28,13 +27,6 @@ class IssuesPlugin(IssuesMixinPlugin):
     implements(p.IConfigurable)
     implements(p.IActions)
     implements(p.IAuthFunctions)
-
-    # IConfigurer
-
-    def update_config(self, config):
-        toolkit.add_template_directory(config, 'templates')
-        toolkit.add_public_directory(config, 'public/css')
-        toolkit.add_resource('public/scripts', 'ckanext_issues')
 
     # ITemplateHelpers
 

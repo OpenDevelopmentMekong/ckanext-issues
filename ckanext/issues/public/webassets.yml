@@ -1,0 +1,12 @@
+issues_css:
+  output: ckanext-issues/%(version)s_issues_css.css
+  contents:
+    - css/ckanext-issues/style.css
+
+issues_js:
+  contents:
+    - scripts/autocomplete-action-api.js
+  output: ckanext-issues/%(version)s_issues_js.js
+  extra:
+    preload:
+      - base/main
