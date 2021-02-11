@@ -100,17 +100,12 @@ def new(package_id, resource_id=None):
             h.flash_success(_('Your issue has been registered, '
                               'thank you for the feedback'))
 
-            if p.toolkit.check_ckan_version(min_version='2.9.0'):
-                return p.toolkit.redirect_to(h.url_for(
-                        'issues.show_view',
-                        package_id=c.pkg['name'],
-                        id=issue_dict['id']
-                    ))
-            p.toolkit.redirect_to(h.url_for(
-                'issues_show',
+            return issues_h.redirect_to_flask_pylons_mixin(
+                pylons_route_name='issues_show',
+                flask_route_name='issues.show_view',
                 package_id=c.pkg['name'],
                 id=issue_dict['id']
-                ))
+            )
 
     c.data_dict = data_dict
     return render("issues/add.html")
@@ -151,11 +146,14 @@ def edit(id, package_id, resource_id=None):
 
         try:
             p.toolkit.get_action('issue_update')(data_dict=data_dict)
-            if p.toolkit.check_ckan_version(min_version='2.9.0'):
-                return p.toolkit.redirect_to('issues.show_view', id=id,
-                                             package_id=package_id)
-            return p.toolkit.redirect_to('issues_show', id=id,
-                                         package_id=package_id)
+
+            return issues_h.redirect_to_flask_pylons_mixin(
+                pylons_route_name='issues_show',
+                flask_route_name='issues.show_view',
+                id=id,
+                package_id=package_id
+            )
+
         except p.toolkit.ValidationError, e:
             errors = e.error_dict
             return p.toolkit.render(
@@ -234,10 +232,7 @@ def comments(id, package_id):
         }
     logic.get_action('issue_comment_create')(context, data_dict)
 
-    if p.toolkit.check_ckan_version(min_version='2.9.0'):
-        return p.toolkit.redirect_to(next_url)
-    else:
-        p.toolkit.redirect_to(next_url)
+    return p.toolkit.redirect_to(next_url)
 
 
 def home_view(package_id):
@@ -260,9 +255,12 @@ def home_view(package_id):
 def delete(dataset_id, issue_id):
     dataset = _before(dataset_id)
     if 'cancel' in request.params:
-        if p.toolkit.check_ckan_version(min_version='2.9.0'):
-            return p.toolkit.redirect_to('issues.show_view', package_id=dataset_id, id=issue_id)
-        p.toolkit.redirect_to('issues_show', package_id=dataset_id, id=issue_id)
+        return issues_h.redirect_to_flask_pylons_mixin(
+            pylons_route_name='issues_show',
+            flask_route_name='issues.show_view',
+            package_id=dataset_id,
+            id=issue_id
+        )
 
     if request.method == 'POST':
         try:
@@ -274,10 +272,11 @@ def delete(dataset_id, issue_id):
 
         h.flash_notice(_('Issue {0} has been deleted.'.format(issue_id)))
 
-        if p.toolkit.check_ckan_version(min_version='2.9.0'):
-            return p.toolkit.redirect_to('issues.home_view', package_id=dataset_id)
-
-        p.toolkit.redirect_to('issues_home', package_id=dataset_id)
+        return issues_h.redirect_to_flask_pylons_mixin(
+            pylons_route_name='issues_home',
+            flask_route_name='issues.home_view',
+            package_id=dataset_id
+        )
     else:
         return render('issues/confirm_delete.html',
                       extra_vars={
@@ -296,13 +295,12 @@ def assign(dataset_id, issue_id):
                 data_dict={'id': assignee_id})
         except toolkit.ObjectNotFound:
             h.flash_error(_('User {0} does not exist'.format(assignee_id)))
-            if p.toolkit.check_ckan_version(min_version='2.9.0'):
-                return p.toolkit.redirect_to('issues.show_view',
-                                             id=issue_id,
-                                             package_id=dataset_id)
-            return p.toolkit.redirect_to('issues_show',
-                                         id=issue_id,
-                                         package_id=dataset_id)
+            return issues_h.redirect_to_flask_pylons_mixin(
+                pylons_route_name='issues_show',
+                flask_route_name='issues.show_view',
+                id=issue_id,
+                package_id=dataset_id
+            )
 
         try:
             toolkit.get_action('issue_update')(
@@ -315,13 +313,12 @@ def assign(dataset_id, issue_id):
         except toolkit.ValidationError, e:
             toolkit.abort(404)
 
-    if p.toolkit.check_ckan_version(min_version='2.9.0'):
-        return p.toolkit.redirect_to('issues.show_view',
-                                     id=issue_id,
-                                     package_id=dataset_id)
-    return p.toolkit.redirect_to('issues_show',
-                                 id=issue_id,
-                                 package_id=dataset_id)
+    return issues_h.redirect_to_flask_pylons_mixin(
+        pylons_route_name='issues_show',
+        flask_route_name='issues.show_view',
+        id=issue_id,
+        package_id=dataset_id
+    )
 
 
 def report_abuse(dataset_id, issue_id):
@@ -336,9 +333,13 @@ def report_abuse(dataset_id, issue_id):
                 data_dict={'issue_id': issue_id, 'dataset_id': dataset_id}
             )
             h.flash_success(_('Issue reported as spam'))
-            if p.toolkit.check_ckan_version(min_version='2.9.0'):
-                return p.toolkit.redirect_to('issues.show_view', package_id=dataset_id, id=issue_id)
-            p.toolkit.redirect_to('issues_show', package_id=dataset_id, id=issue_id)
+
+            return issues_h.redirect_to_flask_pylons_mixin(
+                pylons_route_name='issues_show',
+                flask_route_name='issues.show_view',
+                id=issue_id,
+                package_id=dataset_id
+            )
         except toolkit.ValidationError, e:
             toolkit.abort(404)
 
@@ -356,9 +357,12 @@ def report_comment_abuse(dataset_id, issue_id, comment_id):
                            'dataset_id': dataset_id}
             )
             h.flash_success(_('Comment reported as spam'))
-            if p.toolkit.check_ckan_version(min_version='2.9.0'):
-                return p.toolkit.redirect_to('issues.show_view', package_id=dataset_id, id=issue_id)
-            p.toolkit.redirect_to('issues_show', package_id=dataset_id, id=issue_id)
+            return issues_h.redirect_to_flask_pylons_mixin(
+                pylons_route_name='issues_show',
+                flask_route_name='issues.show_view',
+                id=issue_id,
+                package_id=dataset_id
+            )
         except toolkit.ValidationError, e:
             toolkit.abort(404)
 
@@ -371,9 +375,12 @@ def reset_spam_state(dataset_id, issue_id):
                 data_dict={'issue_id': issue_id, 'dataset_id': dataset_id}
             )
             h.flash_success(_('Issue unflagged as spam'))
-            if p.toolkit.check_ckan_version(min_version='2.9.0'):
-                return p.toolkit.redirect_to('issues.show_view', package_id=dataset_id, id=issue_id)
-            p.toolkit.redirect_to('issues_show', package_id=dataset_id, id=issue_id)
+            return issues_h.redirect_to_flask_pylons_mixin(
+                pylons_route_name='issues_show',
+                flask_route_name='issues.show_view',
+                id=issue_id,
+                package_id=dataset_id
+            )
         except toolkit.NotAuthorized:
             msg = _('You must be logged in to reset spam counters'.format(
                 issue_id))
@@ -391,10 +398,12 @@ def reset_comment_spam_state(dataset_id, issue_id, comment_id):
                            'dataset_id': dataset_id}
             )
             h.flash_success(_('Comment unflagged as spam'))
-            if p.toolkit.check_ckan_version(min_version='2.9.0'):
-                return p.toolkit.redirect_to('issues.show_view', package_id=dataset_id, id=issue_id)
-            else:
-                p.toolkit.redirect_to('issues_show', package_id=dataset_id, id=issue_id)
+            return issues_h.redirect_to_flask_pylons_mixin(
+                pylons_route_name='issues_show',
+                flask_route_name='issues.show_view',
+                id=issue_id,
+                package_id=dataset_id
+            )
 
         except toolkit.NotAuthorized:
             msg = _('You must be logged in to reset spam counters'.format(
@@ -470,6 +479,10 @@ def all_issues_page():
 def _home_handle_error(package_id, exc):
     msg = toolkit._("Validation error: {0}".format(exc.error_summary))
     h.flash(msg, category='alert-error')
-    if p.toolkit.check_ckan_version(min_version='2.9.0'):
-        return p.toolkit.redirect_to('issues.home_view', package_id=package_id)
-    return p.toolkit.redirect_to('issues_home', package_id=package_id)
+    
+    return issues_h.redirect_to_flask_pylons_mixin(
+        pylons_route_name='issues_home',
+        flask_route_name='issues.home_view',
+        package_id=package_id
+    )
+

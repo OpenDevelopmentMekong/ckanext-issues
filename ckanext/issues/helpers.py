@@ -1,5 +1,6 @@
 from ckan.lib.dictization.model_dictize import _get_members, user_list_dictize
 from ckan.plugins import toolkit
+import ckan.lib.helpers as h
 
 
 def get_users_for_group(context, data_dict):
@@ -34,3 +35,18 @@ def get_request_parameter_flask_pylons_mixin(request_object, method="get"):
             new_param[param] = request_params.get(param)
 
     return new_param
+
+
+def redirect_to_flask_pylons_mixin(pylons_route_name=None, flask_route_name=None, **kwargs):
+    """
+    Mixin in route names for pylons and flask.
+    :param pylons_route_name: str
+    :param flask_route_name: str
+    :param kwargs: named arguments
+    :return: redirect
+    """
+
+    if toolkit.check_ckan_version(min_version='2.9.0'):
+        return toolkit.redirect_to(h.url_for(flask_route_name, **kwargs))
+    else:
+        return toolkit.redirect_to(h.url_for(pylons_route_name, **kwargs))
