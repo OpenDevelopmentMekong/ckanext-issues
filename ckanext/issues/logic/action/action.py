@@ -65,7 +65,7 @@ def issue_create(context, data_dict):
     model.Session.add(issue)
     model.Session.commit()
 
-    review_system.issue_created_in_dataset(data_dict={'dataset_id':dataset_id})
+    review_system.issue_created_in_dataset(context=context, data_dict={'dataset_id':dataset_id})
 
     notification.notify_create_reopen(context,issue)
 
@@ -131,7 +131,7 @@ def issue_update(context, data_dict):
         review_system.issue_deleted_from_dataset(data_dict={'dataset_id':issue.dataset_id})
         notification.notify_close(context,issue)
     elif status_change and data_dict['status'] == issuemodel.ISSUE_STATUS.open:
-        review_system.issue_created_in_dataset(data_dict={'dataset_id':issue.dataset_id})
+        review_system.issue_created_in_dataset(context=context, data_dict={'dataset_id':issue.dataset_id})
         notification.notify_create_reopen(context,issue)
 
     return issue.as_dict()

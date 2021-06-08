@@ -10,13 +10,14 @@ import ckanext.issues.model as issuemodel
 
 log = getLogger(__name__)
 
-def issue_created_in_dataset(data_dict):
+def issue_created_in_dataset(context=None, data_dict=None):
 
-  context = {
-    u'model': model,
-    u'session': model.Session,
-    u'user': c.user
-  }
+  if not context:
+    context = {
+      u'model': model,
+      u'session': model.Session,
+      u'user': c.user
+    }
 
   review_system = toolkit.asbool(config.get("ckanext.issues.review_system", False))
 
