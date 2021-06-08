@@ -1,8 +1,8 @@
 from ckan import model
 from ckan.lib import search
 from ckan.plugins import toolkit
-import ckan.new_tests.helpers as helpers
-import ckan.new_tests.factories as factories
+import ckan.tests.helpers as helpers
+import ckan.tests.factories as factories
 
 from ckanext.issues.tests import factories as issue_factories
 

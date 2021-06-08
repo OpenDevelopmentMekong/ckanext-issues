@@ -1,29 +1,26 @@
 from bs4 import BeautifulSoup
 from nose.tools import assert_equals, assert_not_equals, assert_in
-
+import pytest
 from ckan.lib import search
 from ckan.plugins import toolkit
-import ckan.new_tests.helpers as helpers
-import ckan.new_tests.factories as factories
-
+import ckan.tests.helpers as helpers
+import ckan.tests.factories as factories
+from ckan.common import c
 from ckanext.issues.tests import factories as issue_factories
 
 
-class TestAssign(helpers.FunctionalTestBase):
+@pytest.mark.usefixtures("clean_db", "with_request_context")
+class TestAssign:
     def setup(self):
-        super(TestAssign, self).setup()
         self.owner = factories.User()
         self.org = factories.Organization(user=self.owner)
-        self.dataset = factories.Dataset(user=self.owner,
-                                         owner_org=self.org['name'])
+        self.dataset = issue_factories.Dataset(user=self.owner,
+                                               owner_org=self.org['name'])
         self.issue = issue_factories.Issue(user=self.owner,
                                            user_id=self.owner['id'],
-                                           dataset_id=self.dataset['id'])
-        self.app = self._get_test_app()
-
-    def teardown(self):
-        helpers.reset_db()
-        search.clear()
+                                           dataset_id=self.dataset['id'],
+                                           title="issue title for test")
+        self.app = helpers._get_test_app()
 
     def test_user_self_assign(self):
         env = {'REMOTE_USER': self.owner['name'].encode('ascii')}

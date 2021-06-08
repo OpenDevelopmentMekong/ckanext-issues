@@ -1,23 +1,21 @@
 from ckan import model
 from ckan.lib import search
-from ckan.new_tests import factories, helpers
+from ckan.tests import factories, helpers
 from ckan.plugins import toolkit
 
 from ckanext.issues.model import Issue
 from ckanext.issues.tests import factories as issue_factories
-
+import pytest
 from nose.tools import assert_equals, assert_raises
 import mock
 
 
+@pytest.mark.usefixtures("clean_db", "with_request_context")
 class TestIssue(object):
     def setup(self):
         self.user = factories.User()
-        self.dataset = factories.Dataset()
-
-    def teardown(self):
-        helpers.reset_db()
-        search.clear()
+        self.org = factories.Organization(user=self.user)
+        self.dataset = issue_factories.Dataset(owner_org=self.org['id'])
 
     def test_issue_create(self):
         issue_create_result = toolkit.get_action('issue_create')(
@@ -73,19 +71,18 @@ class TestIssue(object):
         assert_equals('visible', issue_object.spam_state)
 
 
+@pytest.mark.usefixtures("clean_db", "with_request_context")
 class TestIssueComment(object):
-    def teardown(self):
-        helpers.reset_db()
-        search.clear()
 
     def test_create_comment_on_issue(self):
         user = factories.User()
-        dataset = factories.Dataset()
+        org = factories.Organization(user=user)
+        dataset = issue_factories.Dataset(owner_org=org['id'])
 
         issue = issue_factories.Issue(user=user, user_id=user['id'],
                                       dataset_id=dataset['id'])
 
-        helpers.call_action('issue_comment_create',
+        com = helpers.call_action('issue_comment_create',
                             context={'user': user['name']},
                             issue_id=issue['id'], comment='some comment')
 
@@ -98,7 +95,8 @@ class TestIssueComment(object):
 
     def test_create_comment_on_closed_issue(self):
         user = factories.User()
-        dataset = factories.Dataset()
+        org = factories.Organization(user=user)
+        dataset = issue_factories.Dataset(owner_org=org['id'])
 
         # create and close our issue
         issue = issue_factories.Issue(user=user, user_id=user['id'],
@@ -122,14 +120,13 @@ class TestIssueComment(object):
         assert_equals(comments[0]['comment'], 'some comment')
 
 
+@pytest.mark.usefixtures("clean_db", "with_request_context")
 class TestIssueList(object):
-    def teardown(self):
-        helpers.reset_db()
-        search.clear()
 
     def test_list_all_issues_for_dataset(self):
         user = factories.User()
-        dataset = factories.Dataset()
+        org = factories.Organization(user=user)
+        dataset = issue_factories.Dataset(owner_org=org['id'])
 
         created_issues = [issue_factories.Issue(user=user, user_id=user['id'],
                                                 dataset_id=dataset['id'],
@@ -139,8 +136,9 @@ class TestIssueList(object):
                                           context={'user': user['name']},
                                           dataset_id=dataset['id'],
                                           sort='oldest')
-        assert_equals([i['id'] for i in created_issues],
-                      [i['id'] for i in issues_list])
+        issues_list_ids = [x['id'] for x in issues_list]
+        for i in created_issues:
+            assert i['id'] in issues_list_ids
 
     def test_list_all_issues_for_dataset_without_dataset_id_fails(self):
         user = factories.User()
@@ -152,7 +150,8 @@ class TestIssueList(object):
 
     def test_limit(self):
         user = factories.User()
-        dataset = factories.Dataset()
+        org = factories.Organization(user=user)
+        dataset = issue_factories.Dataset(owner_org=org['id'])
 
         created_issues = [issue_factories.Issue(user=user, user_id=user['id'],
                                                 dataset_id=dataset['id'],
@@ -168,7 +167,8 @@ class TestIssueList(object):
 
     def test_offset(self):
         user = factories.User()
-        dataset = factories.Dataset()
+        org = factories.Organization(user=user)
+        dataset = issue_factories.Dataset(owner_org=org['id'])
 
         created_issues = [issue_factories.Issue(user=user, user_id=user['id'],
                                                 dataset_id=dataset['id'],
@@ -184,7 +184,8 @@ class TestIssueList(object):
 
     def test_pagination(self):
         user = factories.User()
-        dataset = factories.Dataset()
+        org = factories.Organization(user=user)
+        dataset = issue_factories.Dataset(owner_org=org['id'])
 
         created_issues = [issue_factories.Issue(user=user, user_id=user['id'],
                                                 dataset_id=dataset['id'],
@@ -201,7 +202,8 @@ class TestIssueList(object):
 
     def test_filter_newest(self):
         user = factories.User()
-        dataset = factories.Dataset()
+        org = factories.Organization(user=user)
+        dataset = issue_factories.Dataset(owner_org=org['id'])
 
         issues = [issue_factories.Issue(user=user, user_id=user['id'],
                                dataset_id=dataset['id'], description=i)
@@ -215,7 +217,8 @@ class TestIssueList(object):
 
     def test_filter_least_commented(self):
         user = factories.User()
-        dataset = factories.Dataset()
+        org = factories.Organization(user=user)
+        dataset = issue_factories.Dataset(owner_org=org['id'])
 
         # issue#1 has 3 comment. #2 has 1 comments, etc
         comment_count = [3, 1, 2]
@@ -240,7 +243,8 @@ class TestIssueList(object):
 
     def test_filter_most_commented(self):
         user = factories.User()
-        dataset = factories.Dataset()
+        org = factories.Organization(user=user)
+        dataset = issue_factories.Dataset(owner_org=org['id'])
 
         # issue#1 has 3 comment. #2 has 1 comments, etc
         comment_count = [3, 1, 2, 0]
@@ -267,7 +271,8 @@ class TestIssueList(object):
 
     def test_filter_by_title_string_search(self):
         user = factories.User()
-        dataset = factories.Dataset()
+        org = factories.Organization(user=user)
+        dataset = issue_factories.Dataset(owner_org=org['id'])
 
         issues = [issue_factories.Issue(user_id=user['id'],
                                         dataset_id=dataset['id'],
@@ -283,16 +288,14 @@ class TestIssueList(object):
         assert_equals(expected_issue_ids, [i['id'] for i in filtered_issues])
 
 
+@pytest.mark.usefixtures("clean_db", "with_request_context")
 class TestIssueUpdate(object):
-    def teardown(self):
-        helpers.reset_db()
-        search.clear()
 
     def test_reopen_an_issue(self):
         '''This test is resolve a bug where updating/reopening an issue
         deletes it. Magical'''
         user = factories.User()
-        dataset = factories.Dataset()
+        dataset = issue_factories.Dataset()
         issue = issue_factories.Issue(user=user, user_id=user['id'],
                                       dataset_id=dataset['id'])
 
@@ -319,7 +322,7 @@ class TestIssueUpdate(object):
     def test_cannot_update_spam_using_update(self):
         '''we don't want users to be able to set their own spam status/count'''
         user = factories.User()
-        dataset = factories.Dataset()
+        dataset = issue_factories.Dataset()
         issue = issue_factories.Issue(user=user, user_id=user['id'],
                                       dataset_id=dataset['id'])
         spam = helpers.call_action('issue_update',
@@ -332,15 +335,12 @@ class TestIssueUpdate(object):
         assert_equals('visible', after_update['spam_state'])
 
 
-
+@pytest.mark.usefixtures("clean_db", "with_request_context")
 class TestIssueDelete(object):
-    def teardown(self):
-        helpers.reset_db()
-        search.clear()
 
     def test_deletion(self):
         user = factories.User()
-        dataset = factories.Dataset()
+        dataset = issue_factories.Dataset()
         issue = issue_factories.Issue(user=user, user_id=user['id'],
                                       dataset_id=dataset['id'])
 
@@ -357,7 +357,7 @@ class TestIssueDelete(object):
 
     def test_delete_nonexistent_issue_raises_not_found(self):
         user = factories.User()
-        dataset = factories.Dataset()
+        dataset = issue_factories.Dataset()
         assert_raises(toolkit.ValidationError,
                       helpers.call_action,
                       'issue_delete',
@@ -368,7 +368,7 @@ class TestIssueDelete(object):
     def test_delete_non_integer_parameter_issue_raises_not_found(self):
         '''issue ids are a postgres seqeunce currently'''
         user = factories.User()
-        dataset = factories.Dataset()
+        dataset = issue_factories.Dataset()
         assert_raises(toolkit.ValidationError,
                       helpers.call_action,
                       'issue_delete',
@@ -377,10 +377,8 @@ class TestIssueDelete(object):
                       issue_id='huh')
 
 
+@pytest.mark.usefixtures("clean_db", "with_request_context")
 class TestOrganizationUsersAutocomplete(object):
-    def teardown(self):
-        helpers.reset_db()
-        search.clear()
 
     def test_fetch_org_editors(self):
         owner = factories.User(name='test_owner')
@@ -402,15 +400,13 @@ class TestOrganizationUsersAutocomplete(object):
         )
 
 
+@pytest.mark.usefixtures("clean_db", "with_request_context")
 class TestReportSpam(object):
-    def teardown(self):
-        helpers.reset_db()
-        search.clear()
 
     def test_increase_spam(self):
         owner = factories.User()
         org = factories.Organization(user=owner)
-        dataset = factories.Dataset(owner_org=org['name'])
+        dataset = issue_factories.Dataset(owner_org=org['name'])
         issue = issue_factories.Issue(user_id=owner['id'],
                                       dataset_id=dataset['id'])
 
@@ -428,7 +424,7 @@ class TestReportSpam(object):
     def test_publisher_mark_spam(self):
         owner = factories.User()
         org = factories.Organization(user=owner)
-        dataset = factories.Dataset(owner_org=org['name'])
+        dataset = issue_factories.Dataset(owner_org=org['name'])
         issue = issue_factories.Issue(user=owner, user_id=owner['id'],
                                       dataset_id=dataset['id'])
 
@@ -448,7 +444,7 @@ class TestReportSpam(object):
         mock.get.return_value = '0'
         owner = factories.User()
         org = factories.Organization(user=owner)
-        dataset = factories.Dataset(owner_org=org['name'])
+        dataset = issue_factories.Dataset(owner_org=org['name'])
         issue = issue_factories.Issue(user_id=owner['id'],
                                       dataset_id=dataset['id'])
 
@@ -467,7 +463,7 @@ class TestReportSpam(object):
     def test_reset_spam_state(self):
         owner = factories.User()
         org = factories.Organization(user=owner)
-        dataset = factories.Dataset(owner_org=org['name'])
+        dataset = issue_factories.Dataset(owner_org=org['name'])
         issue = issue_factories.Issue(user_id=owner['id'],
                                       dataset_id=dataset['id'],
                                       spam_state='hidden',
@@ -482,15 +478,14 @@ class TestReportSpam(object):
         assert_equals(0, result['spam_count'])
         assert_equals('visible', result['spam_state'])
 
+
+@pytest.mark.usefixtures("clean_db", "with_request_context")
 class TestReportCommentSpam(object):
-    def teardown(self):
-        helpers.reset_db()
-        search.clear()
 
     def test_increase_spam(self):
         owner = factories.User()
         org = factories.Organization(user=owner)
-        dataset = factories.Dataset(owner_org=org['name'])
+        dataset = issue_factories.Dataset(owner_org=org['name'])
         issue = issue_factories.Issue(user_id=owner['id'],
                                       dataset_id=dataset['id'])
         comment = issue_factories.IssueComment(user_id=owner['id'],
@@ -512,7 +507,7 @@ class TestReportCommentSpam(object):
     def test_publisher_mark_spam(self):
         owner = factories.User()
         org = factories.Organization(user=owner)
-        dataset = factories.Dataset(owner_org=org['name'])
+        dataset = issue_factories.Dataset(owner_org=org['name'])
         issue = issue_factories.Issue(user=owner, user_id=owner['id'],
                                       dataset_id=dataset['id'])
 
@@ -537,7 +532,7 @@ class TestReportCommentSpam(object):
 
         owner = factories.User()
         org = factories.Organization(user=owner)
-        dataset = factories.Dataset(owner_org=org['name'])
+        dataset = issue_factories.Dataset(owner_org=org['name'])
         issue = issue_factories.Issue(user_id=owner['id'],
                                       dataset_id=dataset['id'])
         comment = issue_factories.IssueComment(user_id=owner['id'],
@@ -559,7 +554,7 @@ class TestReportCommentSpam(object):
     def test_reset_spam_state(self):
         owner = factories.User()
         org = factories.Organization(user=owner)
-        dataset = factories.Dataset(owner_org=org['name'])
+        dataset = issue_factories.Dataset(owner_org=org['name'])
         issue = issue_factories.Issue(user_id=owner['id'],
                                       dataset_id=dataset['id'])
         comment = issue_factories.IssueComment(user_id=owner['id'],

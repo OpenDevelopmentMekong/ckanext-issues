@@ -1,14 +1,16 @@
-from ckanext.issues import model
-from ckan.new_tests import factories, helpers
+from ckanext.issues import model as issue_model
+from ckan.tests import factories, helpers
 
 import factory
 
 
 class Issue(factory.Factory):
-    FACTORY_FOR = model.Issue
 
     title = 'Test issue'
     description = 'Some description'
+
+    class Meta:
+        model = issue_model.Issue
 
     @classmethod
     def _build(cls, target_class, *args, **kwargs):
@@ -32,7 +34,10 @@ class Issue(factory.Factory):
 
 
 class IssueComment(factory.Factory):
-    FACTORY_FOR = model.IssueComment
+
+    class Meta:
+        model = issue_model.IssueComment
+
     comment = 'some comment'
 
     @classmethod
@@ -49,3 +54,33 @@ class IssueComment(factory.Factory):
                                                  context=context,
                                                  **kwargs)
         return issue_comment_dict
+
+
+class Dataset(factories.Dataset):
+
+    @classmethod
+    def _add_mandatory_fields(cls, data_dict):
+        """
+        Add additional dataset arguments
+        :return:
+        """
+        _mandatory_fields = {
+            "notes_translated": {"en": "test"},
+            "odm_spatial_range": "km"
+        }
+        for k, val in _mandatory_fields.items():
+            data_dict[k] = data_dict.get(k, val)
+        return data_dict
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        if args:
+            assert False, "Positional args aren't supported, use keyword args."
+
+        context = {"user": factories._get_action_user_name(kwargs)}
+        kwargs = cls._add_mandatory_fields(kwargs)
+        dataset_dict = helpers.call_action(
+            "package_create", context=context, **kwargs
+        )
+        return dataset_dict
+

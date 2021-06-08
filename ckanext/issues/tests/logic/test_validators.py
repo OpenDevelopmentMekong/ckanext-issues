@@ -1,17 +1,16 @@
 from ckan import model
 from ckan.lib import search
-from ckan.new_tests import factories, helpers
+from ckan.tests import factories, helpers
 from ckanext.issues.logic import validators
-
+from ckanext.issues.tests import factories as issue_factories
 from nose.tools import assert_equals
+import pytest
 
+
+@pytest.mark.usefixtures("clean_db", "with_request_context")
 class TestAsPackageId(object):
     def setup(self):
-        self.dataset = factories.Dataset()
-
-    def teardown(self):
-        helpers.reset_db()
-        search.clear()
+        self.dataset = issue_factories.Dataset()
 
     def test_given_name_returns_id(self):
         package_id = validators.as_package_id(self.dataset['name'], 

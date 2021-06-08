@@ -4,7 +4,7 @@ ckanext.issues.enabled_for_datasets
 ckanext.issues.enabled_per_dataset_default
 '''
 from ckan.plugins import toolkit
-from ckan.new_tests import helpers, factories
+from ckan.tests import helpers, factories
 from ckanext.issues.tests import factories as issue_factories
 
 from nose.tools import assert_equals
