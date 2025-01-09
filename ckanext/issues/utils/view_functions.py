@@ -116,7 +116,7 @@ def show_view(id, package_id):
     extra_vars = dict()
     try:
         extra_vars = show.show(id, package_id, session=model.Session)
-    except toolkit.ValidationError, e:
+    except toolkit.ValidationError as e:
         p.toolkit.abort(
             404, toolkit._('Issue not found: {0}'.format(e.error_summary)))
 
@@ -154,7 +154,7 @@ def edit(id, package_id, resource_id=None):
                 package_id=package_id
             )
 
-        except p.toolkit.ValidationError, e:
+        except p.toolkit.ValidationError as e:
             errors = e.error_dict
             return p.toolkit.render(
                 'issues/edit.html',
@@ -163,7 +163,7 @@ def edit(id, package_id, resource_id=None):
                     'errors': errors,
                 },
             )
-        except p.toolkit.NotAuthorized, e:
+        except p.toolkit.NotAuthorized as e:
             p.toolkit.abort(401, e.message)
 
 
@@ -247,7 +247,7 @@ def home_view(package_id):
 
     try:
         extra_vars = home.home(package_id, params)
-    except toolkit.ValidationError, e:
+    except toolkit.ValidationError as e:
         _home_handle_error(package_id, e)
     return render("issues/home.html", extra_vars=extra_vars)
 
@@ -310,7 +310,7 @@ def assign(dataset_id, issue_id):
             msg = _('Unauthorized to assign users to issue'.format(
                 issue_id))
             toolkit.abort(401, msg)
-        except toolkit.ValidationError, e:
+        except toolkit.ValidationError:
             toolkit.abort(404)
 
     return issues_h.redirect_to_flask_pylons_mixin(
@@ -340,7 +340,7 @@ def report_abuse(dataset_id, issue_id):
                 id=issue_id,
                 package_id=dataset_id
             )
-        except toolkit.ValidationError, e:
+        except toolkit.ValidationError:
             toolkit.abort(404)
 
 
@@ -363,7 +363,7 @@ def report_comment_abuse(dataset_id, issue_id, comment_id):
                 id=issue_id,
                 package_id=dataset_id
             )
-        except toolkit.ValidationError, e:
+        except toolkit.ValidationError:
             toolkit.abort(404)
 
 
@@ -409,7 +409,7 @@ def reset_comment_spam_state(dataset_id, issue_id, comment_id):
             msg = _('You must be logged in to reset spam counters'.format(
                 issue_id))
             toolkit.abort(401, msg)
-        except toolkit.ValidationError, e:
+        except toolkit.ValidationError:
             toolkit.abort(404)
 
 

@@ -2,7 +2,7 @@
 
 {% block styles %}
   {{ super() }}
-  {% resource 'ckanext_issues/autocomplete-action-api.js' %}
+  {% asset 'issues/issues_js' %}
 {% endblock %}
 
 {% block subtitle %}{{ '%s #%s - %s' % (issue.title, issue.id, _('Issues')) }} {% endblock %}
@@ -33,7 +33,7 @@
         {% endif %}
         {% if c.user and comment.spam_state =='visible' %}
           <div id="issue-report-abuse-button" class="issue-comment-action">
-            <form id="issue-report-abuse-form" method="post" action="{{h.url_for('issues_report_abuse', dataset_id=dataset.name, issue_id=issue.id)}}">
+            <form id="issue-report-abuse-form" method="post" action="{{h.url_for('issues.report_abuse', dataset_id=dataset.name, issue_id=issue.id)}}">
               <button class="subtle-btn subtle-btn-abuse" type="submit" title="Report Abuse">
                 <i class="icon-flag"></i>
               </button>
@@ -41,7 +41,7 @@
           </div>
         {% elif can_edit_issue %}
           <div id="issue-not-spam-button" class="issue-comment-action">
-            <form id="issue-not-spam-button" method="post" action="{{h.url_for('issues_reset_spam_state', dataset_id=dataset.name, issue_id=issue.id)}}">
+            <form id="issue-not-spam-button" method="post" action="{{h.url_for('issues.reset_spam_state', dataset_id=dataset.name, issue_id=issue.id)}}">
               <button class="subtle-btn-active subtle-btn-abuse-active" type="submit" data-toggle="tooltip" title="Cancel abuse notification">
                 <i class="icon-flag"></i>
                 {{ _('Abuse - admin notified') }}
@@ -80,7 +80,7 @@
       <div class="issue-comment-actions">
         {% if c.user and comment.spam_state =='visible' %}
           <div id="issue-report-abuse-button" class="issue-comment-action">
-            <form class="issue-comment-report-abuse-form" method="post" action="{{h.url_for('issues_comment_report_abuse', dataset_id=dataset.name, issue_id=issue.id, comment_id=comment.id)}}">
+            <form class="issue-comment-report-abuse-form" method="post" action="{{h.url_for('issues.report_comment_abuse', dataset_id=dataset.name, issue_id=issue.id, comment_id=comment.id)}}">
               <button class="btn btn-small" type="submit" "title"="Report Abuse">
                 <i class="icon-flag"></i>
                 {{ _('Report Abuse') }}
@@ -89,7 +89,7 @@
           </div>
         {% elif can_edit_issue %}
           <div id="issue-not-spam-button" class="issue-comment-action">
-            <form id="issue-not-spam-button" method="post" action="{{h.url_for('issues_comment_reset_spam_state', dataset_id=dataset.name, issue_id=issue.id, comment_id=comment.id)}}">
+            <form id="issue-not-spam-button" method="post" action="{{h.url_for('issues.reset_comment_spam_state', dataset_id=dataset.name, issue_id=issue.id, comment_id=comment.id)}}">
               <button class="btn btn-small" type="submit" "title"="Not abuse">
                 <i class="icon-flag"></i>
                 {{ _('Not abuse') }}
@@ -149,9 +149,9 @@
       <div class="issue-comment-new">
         <div class="issue-comment-wrapper">
           {% if c.user %}
-          <a href="{{c.current_user.ckan_url}}"
+          <a href="#"
             class="issue-comment-avatar">
-            {{c.current_user.gravatar}}
+            {{h.user_image(c.user.id, size=170)}}
           </a>
           <form id="issue-comment-form" class="dataset-form" method="post"
             data-module="basic-form"

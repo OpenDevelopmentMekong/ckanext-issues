@@ -8,17 +8,12 @@ from ckanext.issues.lib import util, helpers
 from ckanext.issues.model import setup as model_setup
 import ckanext.issues.logic.action as action
 import ckanext.issues.auth as auth
+from ckanext.issues.views import issues_blueprint
 
 log = getLogger(__name__)
 
 
-if toolkit.check_ckan_version(min_version='2.9.0'):
-    from ckanext.issues.plugin.flask_plugin import IssuesMixinPlugin
-else:
-    from ckanext.issues.plugin.pylons_plugin import IssuesMixinPlugin
-
-
-class IssuesPlugin(IssuesMixinPlugin):
+class IssuesPlugin(p.SingletonPlugin):
     """
     CKAN Issues Extension
     """
@@ -27,6 +22,16 @@ class IssuesPlugin(IssuesMixinPlugin):
     implements(p.IConfigurable)
     implements(p.IActions)
     implements(p.IAuthFunctions)
+    implements(p.IBlueprint)
+
+    # IConfigurer
+    def update_config(self, config):
+        toolkit.add_template_directory(config, 'templates')
+        toolkit.add_public_directory(config, 'public')
+        toolkit.add_resource('public', 'issues')
+        
+    def get_blueprint(self):
+        return [issues_blueprint]
 
     # ITemplateHelpers
 
@@ -54,7 +59,7 @@ class IssuesPlugin(IssuesMixinPlugin):
     # IActions
 
     def get_actions(self):
-        return dict((name, function) for name, function in action.__dict__.items() if callable(function))
+        return {function.__name__: function for function in action.actions}
 
     # IAuthFunctions
 

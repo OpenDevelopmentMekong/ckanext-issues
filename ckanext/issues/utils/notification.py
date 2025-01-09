@@ -7,7 +7,6 @@ import ckan.plugins.toolkit as toolkit
 from ckan.lib.base import render
 from ckan.logic import action
 from ckan.lib.mailer import mail_recipient
-import threading
 
 log = getLogger(__name__)
 
@@ -87,7 +86,7 @@ def notify(context,issue,email_template, issue_action=None):
     issuer_email = issuer.email
     #email_msg = render(email_template,extra_vars=extra_vars)
     email_msg = issuer_email_text_close_delete.format(str(user_obj.name), str(user_obj.email), issue_action, extra_vars.get('site_url')) 
-    send_email(contact_name,contact_email,email_msg)
+    send_email(issuer_name, issuer_email, email_msg)
     # Need to send an email on issue close
 
   if notify_owner:

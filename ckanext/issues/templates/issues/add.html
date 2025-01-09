@@ -32,7 +32,7 @@
   {% endblock %}
 
   <div class="form-actions">
-    {{ h.nav_link(_('Cancel'), controller='related', action='list', id=c.id,
+    {{ h.nav_link(_('Cancel'), named_route='dataset.read', id=data['dataset_id'],
     class_='btn') }}
     <button class="btn btn-primary" type="submit" name="save" tabindex="4">{{ _('Create') }}</button>
   </div>

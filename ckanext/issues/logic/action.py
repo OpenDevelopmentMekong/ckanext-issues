@@ -415,3 +415,17 @@ def issue_comment_report_spam(context, data_dict):
         if max_strikes:
             if issue_comment.spam_count > p.toolkit.asint(max_strikes):
                 issue_comment.mark_as_spam(session)
+actions = [
+    issue_show,
+    issue_create,
+    issue_update,
+    issue_comment_create,
+    issue_search,
+    issue_count,
+    issue_delete,
+    organization_users_autocomplete,
+    issue_report_spam,
+    issue_reset_spam_state,
+    issue_comment_reset_spam_state,
+    issue_comment_report_spam,
+]

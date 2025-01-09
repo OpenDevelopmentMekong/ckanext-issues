@@ -35,8 +35,7 @@
                             <span py:when="not issue.package_id">None</span>
                             <span py:otherwise="">
                                 ${h.link_to(c.pkg_names[issue.package_id],
-                                            h.url_for(controller='package', action='read',
-                                                      id = c.pkg_names[issue.package_id]) + "#issue")}
+                                            h.url_for('dataset.read', id = c.pkg_names[issue.package_id]) + "#issue")}
                             </span>
                         </div>
                         <div>Description: ${issue.description}</div>

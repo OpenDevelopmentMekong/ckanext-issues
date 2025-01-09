@@ -3,7 +3,6 @@ from ckan.plugins.toolkit import config
 import ckan.model as model
 import ckan.lib.helpers as h
 import ckan.logic as logic
-import ckan.plugins as p
 from ckan.plugins import toolkit
 from ckan.common import _, c
 import ckanext.issues.model as issuemodel
@@ -30,7 +29,7 @@ def issue_created_in_dataset(context=None, data_dict=None):
       try:
         toolkit.get_action('package_patch')(context, data_dict={'id':data_dict['dataset_id'],'private':True})
       except logic.NotAuthorized:
-        abort(401, _('Not authorized to modify the dataset'))
+        toolkit.abort(401, _('Not authorized to modify the dataset'))
 
       if issue_count == 1:
         h.flash_error(_('The dataset has now been made private.'))
@@ -55,7 +54,7 @@ def issue_deleted_from_dataset(data_dict):
       try:
         logic.get_action('package_patch')(context, data_dict={'id':data_dict['dataset_id'],'private':False})
       except logic.NotAuthorized:
-        abort(401, _('Not authorized to modify the dataset'))
+        toolkit.abort(401, _('Not authorized to modify the dataset'))
 
       h.flash_success(_('The dataset has now been made public.'))
 

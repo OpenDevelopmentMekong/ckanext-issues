@@ -10,7 +10,7 @@
       {% block form %}
         <p>{{ _('Are you sure you want to delete issue - {0}?').format(issue_id) }}</p>
         <p class="form-actions">
-          <form id='ckanext-issues-confirm-delete' action="{% url_for 'issues_delete', dataset_id=pkg.id, issue_id=issue_id %}" method="post">
+          <form id='ckanext-issues-confirm-delete' action="{% url_for 'issues.delete', dataset_id=pkg.id, issue_id=issue_id %}" method="post">
             <button class="btn" type="submit" name="cancel" >{{ _('Cancel') }}</button>
             <button class="btn btn-primary" type="submit" name="delete" >{{ _('Confirm Delete') }}</button>
           </form>
