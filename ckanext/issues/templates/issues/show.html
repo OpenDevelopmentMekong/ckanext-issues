@@ -7,7 +7,7 @@
 
 {% block subtitle %}{{ '%s #%s - %s' % (issue.title, issue.id, _('Issues')) }} {% endblock %}
 
-{% block breadcrumb_item %}{{ h.nav_link(issue.id, named_route='issues_show', package_id=dataset.name, id=issue.id) }}
+{% block breadcrumb_item %}{{ h.nav_link(issue.id, named_route='issues.show_view', package_id=dataset.name, id=issue.id) }}
 {% endblock %}
 
 {% set can_edit_issue = h.check_access('issue_update', {'dataset_id': dataset.id, 'id': issue.id }) %}

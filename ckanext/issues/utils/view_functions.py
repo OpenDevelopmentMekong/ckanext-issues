@@ -197,7 +197,7 @@ def comments(id, package_id):
         )
     else:
         next_url = h.url_for(
-            'issues_show',
+            'issues.show_view',
             package_id=c.pkg['name'],
             id=id
             )
@@ -479,7 +479,7 @@ def all_issues_page():
 def _home_handle_error(package_id, exc):
     msg = toolkit._("Validation error: {0}".format(exc.error_summary))
     h.flash(msg, category='alert-error')
-    
+
     return issues_h.redirect_to_flask_pylons_mixin(
         pylons_route_name='issues_home',
         flask_route_name='issues.home_view',

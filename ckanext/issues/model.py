@@ -95,7 +95,7 @@ class IssueCategory(object):
 # make a nice user dict object
 def _user_dict(user):
     out = user.as_dict()
-    out['ckan_url'] = h.url_for('user_datasets', id=user.name)
+    out['ckan_url'] = h.url_for('user.read', id=user.name)
     out['gravatar'] = h.gravatar(user.email_hash, size=48)
     return out
 
@@ -224,7 +224,7 @@ class Issue(domain_object.DomainObject):
         out['user'] = _user_dict(self.user)
         # some cases dataset not yet set ...
         if self.dataset:
-            out['ckan_url'] = h.url_for('issues_show',
+            out['ckan_url'] = h.url_for('issues.show_view',
                                         package_id=self.dataset.name,
                                         id=self.id)
         return out

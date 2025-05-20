@@ -41,28 +41,28 @@ def notify_delete(context,issue):
 
 def notify(context,issue,email_template, issue_action=None):
   """
-   Changes made: 
+   Changes made:
 	- New helper function to get user information for the given organization.
         - Since user information is removed from api call organization_show
         - Observed that author/maintainer infromation is always null in package table or package metadata.
   		Hence used package creater_id from package table
         - Changed user name refering to who closes an issue while sending an email for action close and delete.
 		Earlier username referring to issuer user id
-        - Added a new functionality to send an email to issuer who raised an issue. 
+        - Added a new functionality to send an email to issuer who raised an issue.
   """
   from ckanext.issues import helpers as issues_hlp
   notify_admin = toolkit.asbool(config.get("ckanext.issues.notify_admin", False))
   notify_owner = toolkit.asbool(config.get("ckanext.issues.notify_owner", False))
   notify_issuer = toolkit.asbool(config.get("ckanext.issues.notify_issuer", False))
-  
+
   if not notify_admin and not notify_owner:
       return
-  
+
   if issue_action == 'create':
     user_obj = model.User.get(issue.user_id)
   else:
     user_obj = context['auth_user_obj']
-  
+
   dataset = model.Package.get(issue.dataset_id)
   dataset_creator = model.User.get(dataset.creator_user_id)
 
@@ -72,8 +72,7 @@ def notify(context,issue,email_template, issue_action=None):
       'username': user_obj.name,
       'email': user_obj.email,
       'site_url': h.url_for(
-          controller='ckanext.issues.controller:IssueController',
-          action='show',
+          'issues.show_view',
           id=issue.id,
           package_id=issue.dataset_id,
           qualified=True
@@ -85,7 +84,7 @@ def notify(context,issue,email_template, issue_action=None):
     issuer_name = issuer.name
     issuer_email = issuer.email
     #email_msg = render(email_template,extra_vars=extra_vars)
-    email_msg = issuer_email_text_close_delete.format(str(user_obj.name), str(user_obj.email), issue_action, extra_vars.get('site_url')) 
+    email_msg = issuer_email_text_close_delete.format(str(user_obj.name), str(user_obj.email), issue_action, extra_vars.get('site_url'))
     send_email(issuer_name, issuer_email, email_msg)
     # Need to send an email on issue close
 
@@ -96,16 +95,16 @@ def notify(context,issue,email_template, issue_action=None):
     send_email(contact_name,contact_email,email_msg)
 
   if notify_admin:
-      
+
       # retrieve organization's admins (or the role specified on ckanext.issues.minimun_role_required) to notify
       organization = action.get.organization_show(context,data_dict={'id':dataset.owner_org})
       organization['users'] = issues_hlp.get_users_for_group(context, {'id': dataset.owner_org})
       minimun_role_required = config.get("ckanext.issues.minimun_role_required", "Admin")
-     
+
       for user in organization['users']:
 
         if user['capacity'] == role_mapper[minimun_role_required] and user['activity_streams_email_notifications']:
-          
+
           admin_user = model.User.get(user['id'])
           admin_name = admin_user.name
           admin_email = admin_user.email
